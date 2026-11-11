@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Analyzer</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#080b12;
+ color:white;
+ font-family:Arial,sans-serif;
+ padding:18px;
+}
+header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ margin-bottom:25px;
+}
+h2{color:#00d6a0;margin:0}
+.card{
+ background:#121925;
+ border:1px solid #243044;
+ border-radius:14px;
+ padding:16px;
+ margin-bottom:16px;
+}
+.label{color:#8c9bad;font-size:13px}
+select,button{
+ background:#202c3d;
+ color:white;
+ border:1px solid #34445b;
+ padding:12px;
+ border-radius:8px;
+}
+select{width:100%;margin-top:10px}
+button{
+ width:100%;
+ background:#00a982;
+ border:0;
+ font-weight:bold;
+ margin-top:12px;
+}
+#chart{
+ width:100%;
+ height:220px;
+}
+.signal{
+ text-align:center;
+ padding:20px;
+ border-radius:10px;
+ background:#1a2935;
+}
+#trend{font-size:25px;font-weight:bold}
+.green{color:#00d6a0}
+.red{color:#ff6464}
+.yellow{color:#ffcf5c}
+footer{
+ text-align:center;
+ color:#68788d;
+ font-size:12px;
+ margin:25px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>TRADE ANALYZER</h2>
+<span>● DEMO</span>
+</header>
+
+<div class="card">
+<div class="label">SELECT MARKET</div>
+<select id="asset">
+<option>EUR/USD</option>
+<option>GBP/USD</option>
+<option>USD/JPY</option>
+<option>BTC/USD</option>
+</select>
+
+<div class="label" style="margin-top:15px">TIMEFRAME</div>
+<select id="timeframe">
+<option>1 Minute</option>
+<option>5 Minutes</option>
+<option>15 Minutes</option>
+</select>
+</div>
+
+<div class="card">
+<div class="label">MARKET CHART</div>
+<canvas id="chart"></canvas>
+<div class="label">Illustrative sample price data</div>
+</div>
+
+<div class="card">
+<div class="label">MARKET ANALYSIS</div>
+<div class="signal">
+<div class="label">CURRENT TREND</div>
+<div id="trend" class="yellow">ANALYZING...</div>
+<p id="description">Calculating market direction</p>
+</div>
+</div>
+
+<div class="card">
+<div class="label">TECHNICAL INDICATORS</div>
+<p>Short moving average: <b id="sma1">--</b></p>
+<p>Long moving average: <b id="sma2">--</b></p>
+<p>Momentum: <b id="momentum">--</b></p>
+</div>
+
+<div class="card">
+<div class="label">EDUCATIONAL SIGNAL</div>
+<h2 id="signal">WAIT</h2>
+<p id="reason">Waiting for market analysis.</p>
+<button onclick="analyze()">ANALYZE AGAIN</button>
+</div>
+
+<footer>
+Trade Analyzer v1.0<br>
+Educational demo. Sample data only.
+</footer>
+
+<script>
+const canvas=document.getElementById("chart");
+const ctx=canvas.getContext("2d");
+
+let prices=[];
+
+function generateData(){
+ prices=[1.1000];
+
+ for(let i=1;i<45;i++){
+  let change=(Math.random()-.49)*.0015;
+  prices.push(prices[i-1]+change);
+ }
+}
+
+function average(arr,n){
+ let values=arr.slice(-n);
+ return values.reduce((a,b)=>a+b,0)/values.length;
+}
+
+function drawChart(){
+ const w=canvas.clientWidth;
+ const h=220;
+ const dpr=window.devicePixelRatio||1;
+
+ canvas.width=w*dpr;
+ canvas.height=h*dpr;
+ ctx.scale(dpr,dpr);
+
+ ctx.clearRect(0,0,w,h);
+
+ let min=Math.min(...prices)-.001;
+ let max=Math.max(...prices)+.001;
+ let step=w/prices.length;
+
+ for(let i=0;i<prices.length;i++){
+  let x=i*step+step/2;
+  let y=h-((prices[i]-min)/(max-min))*h;
+
+  ctx.fillStyle=i===0||prices[i]>=prices[i-1]
+    ?"#00d6a0":"#ff6464";
+
+  ctx.fillRect(x-2,y,4,5);
+ }
+}
+
+function analyze(){
+ const short=average(prices,5);
+ const long=average(prices,15);
+ const current=prices[prices.length-1];
+ const previous=prices[prices.length-6];
+
+ let trend=document.getElementById("trend");
+ let signal=document.getElementById("signal");
+
+ document.getElementById("sma1").textContent=short.toFixed(5);
+ document.getElementById("sma2").textContent=long.toFixed(5);
+
+ let momentum=current-previous;
+
+ document.getElementById("momentum").textContent=
+ momentum>0?"Positive":"Negative";
+
+ if(short>long && momentum>0){
+  trend.textContent="UPWARD";
+  trend.className="green";
+  signal.textContent="UPWARD TREND";
+  signal.className="green";
+  document.getElementById("description").textContent=
+   "Short average is above long average.";
+  document.getElementById("reason").textContent=
+   "The sample data shows upward momentum.";
+ }
+ else if(short<long && momentum<0){
+  trend.textContent="DOWNWARD";
+  trend.className="red";
+  signal.textContent="DOWNWARD TREND";
+  signal.className="red";
+  document.getElementById("description").textContent=
+   "Short average is below long average.";
+  document.getElementById("reason").textContent=
+   "The sample data shows downward momentum.";
+ }
+ else{
+  trend.textContent="NEUTRAL";
+  trend.className="yellow";
+  signal.textContent="WAIT";
+  signal.className="yellow";
+  document.getElementById("description").textContent=
+   "No clear trend agreement.";
+  document.getElementById("reason").textContent=
+   "The indicators do not agree.";
+ }
+
+ drawChart();
+}
+
+generateData();
+analyze();
+
+window.addEventListener("resize",drawChart);
+</script>
+
+</body>
+</html>
